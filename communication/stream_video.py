@@ -3,7 +3,7 @@ import numpy
 import socket
 import struct
 
-class Stream_Video:
+class StreamVideo:
     def __init__(self, client_ip='0.0.0.0', host_port=9999):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.max_packet_size = 20000

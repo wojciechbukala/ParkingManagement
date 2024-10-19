@@ -3,14 +3,19 @@ import cv2
 from ultralytics import YOLO
 import threading
 import time
-from stream_video import Stream_Video
-from send_license_plate import Send_License_Plate
+from communication.stream_video import StreamVideo
+from communication.send_img import SendImg
+from read_license_plate import ReadLicensePlate
+from communication.send_data import SendData
 
-model = YOLO('best.pt')
+recognition_model = YOLO('models/best.pt')
 
 last_detection_time = time.time()
 
-sender = Send_License_Plate(host_ip='0.0.0.0', host_port=9998)
+OCR_model = ReadLicensePlate()
+
+sender_img = SendImg(host_ip='0.0.0.0', host_port=9998)
+sender_data = SendData(host_ip='0.0.0.0', host_port=9997)
 
 def detection_interval():
     current_time = time.time()
@@ -19,17 +24,20 @@ def detection_interval():
     return last_detection_time, False
 
 def detection_thread(frame):
-    results = model(frame)
+    results = recognition_model(frame)
     if results:
         for result in results:
             for det in result.boxes.data:
                 x1, y1, x2, y2, conf, cls = det.tolist()
 
                 if conf > 0.2:
-                    # print("Wykryto")
-                    # plate_img = frame[int(y1):int(y2), int(x1):int(x2)]
-                    # cv2.imwrite("detected.png", plate_img)
-                    sender.send_frame(img)
+                    plate_img = frame[int(y1):int(y2), int(x1):int(x2)]
+                    sender_img.send_frame(plate_img)
+                    license_plate = OCR_model.get_string(plate_img)
+                    data = {
+                        "license_plate": license_plate
+                    }
+                    sender_data.send_data(data)
 
 
 def cam_setup():
@@ -42,17 +50,15 @@ def cam_setup():
     return cam
 
 frame = cam_setup()
-st = Stream_Video('192.168.1.125', 9999)
+st = StreamVideo('192.168.1.125', 9999)
 
 while True:
     img = frame.capture_array()
 
     last_detection_time, interval = detection_interval()
     if interval == True:
-        print("10 sekund")
         detection_thread_instance = threading.Thread(target=detection_thread, args=(img,))
         detection_thread_instance.start()
-        #cv2.imwrite("aktualne.png", img)
 
     cv2.imshow("Camera", img)
     st.stream_frame(img)
