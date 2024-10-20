@@ -60,7 +60,7 @@ while True:
         detection_thread_instance = threading.Thread(target=detection_thread, args=(img,))
         detection_thread_instance.start()
 
-    cv2.imshow("Camera", img)
+    #cv2.imshow("Camera", img)
     st.stream_frame(img)
 
     if cv2.waitKey(1) == ord('q'):

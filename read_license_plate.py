@@ -8,6 +8,7 @@ class ReadLicensePlate:
     def img_preprocess(self, img):
         img = cv2.resize(img, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        cv2.imwrite('preprocessed.png', img)
         return img
 
     def get_string(self, img):
