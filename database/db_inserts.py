@@ -12,8 +12,18 @@ class Inserts():
     def __del__(self):
         self.session.close()
 
-    def update_db(self):
-        pass
+    def insert_car(self, license_plate):
+        car = Cars(license_plate)
+        self.session.add(car)
+        self.session.commit()
+
+    def car_exit(self, lp):
+        exiting_car = self.session.query(Cars).filter_by(license_plate=lp, currently_parked=True).first()
+        if exiting_car:
+            exiting_car.exit_time = datetime.now()
+            exiting_car.currently_parked = False
+            self.session.commit()
+
 
     def remove_expider_authorization(self):
         expired_cars = self.session.query(AuthorizedCars).filter_by(authorization_end_date < now)
@@ -41,5 +51,8 @@ class Inserts():
 
 if __name__ == "__main__":
     insert = Inserts()
-    insert.insert_auth_car("ZS1235", datetime(2024, 10, 9, 8, 0, 0),
-                            datetime(2024, 12, 31, 23, 59, 59))
+    # insert.insert_car("ZS1235", datetime(2024, 10, 9, 8, 0, 0),
+    #                         datetime(2024, 12, 31, 23, 59, 59))
+    insert.insert_car("DW1235")
+    insert.insert_car("WE1235")
+    insert.insert_car("PO1235")

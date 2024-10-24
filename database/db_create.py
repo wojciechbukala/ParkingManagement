@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, ForeignKey, Column, String, Integer, DateTime, Float, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from datetime import datetime
 
 Base = declarative_base()
 
@@ -29,9 +30,9 @@ class Cars(Base):
     exit_time = Column("exit_time", DateTime)
     currently_parked = Column("currently_parked", Boolean)
 
-    def __init__(self, license_plate, entry_time, exit_time, currently_parked):
+    def __init__(self, license_plate, entry_time = None, exit_time = None, currently_parked = True):
         self.license_plate = license_plate
-        self.entry_time = entry_time
+        self.entry_time = entry_time if entry_time else datetime.now()
         self.exit_time = exit_time
         self.currently_parked = currently_parked
 

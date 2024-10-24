@@ -1,7 +1,7 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-from db_create import AuthorizedCars, Base
+from db_create import Cars, AuthorizedCars, Base
 from datetime import datetime
 
 app = Flask(__name__)
@@ -9,6 +9,10 @@ app = Flask(__name__)
 engine = create_engine("sqlite:///CarPark.db", echo=True)
 Session = sessionmaker(bind=engine)
 session = Session()
+
+@app.route("/change_settings", methods=["POST"])
+def change_settings():
+    pass
 
 @app.route("/get_cars", methods=["GET"])
 def get_cars():
@@ -41,22 +45,39 @@ def get_auth_cars():
 
 @app.route('/add_authorization', methods=["POST"])
 def insert_auth_car():
-    license_plate = request.args.get("license_plate")
-    start_time = request.args.get("start_time")
-    end_time = request.args.get("end_time")
+    data = request.get_json()
+
+    license_plate = data.get("license_plate")
+    start_time_str = data.get("start_date")
+    end_time_str = data.get("end_date")
 
     try:
         start_time = datetime.strptime(start_time_str, '%Y-%m-%d %H:%M:%S')
         end_time = datetime.strptime(end_time_str, '%Y-%m-%d %H:%M:%S')
-    except ValueError as e:
-        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD HH:MM:SS"}), 400
-        
-    auth_car = AuthorizedCars(license_plate, start_time, end_time)
 
-    session.add(auth_car)
-    session.commit()
+        auth_car = AuthorizedCars(license_plate=license_plate, authorization_start_date=start_time, authorization_end_date=end_time)
 
-    return jsonify({"message": "Car authorization added successfully!"}), 201
+        session.add(auth_car)
+        session.commit()
+
+        return jsonify({"message": "Car authorization added successfully!"}), 201
+    except Exception as e:
+        session.rollback()
+        return jsonify({"error": f"Failed to add authorization: {str(e)}"}), 500
+
+@app.route('/delete_authorization', methods=['POST'])
+def delete_auth_car():
+    data = request.get_json()
+
+    license_plate = data.get("license_plate")
+
+    car_to_remove = session.query(AuthorizedCars).filter_by(license_plate=license_plate).first()
+    if car_to_remove:
+        session.delete(car_to_remove)
+        session.commit()
+        return jsonify({"message": "Car authorization removed successfully!"}), 201
+
+    return jsonify({"message": "Can not find the car!"}), 201
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
