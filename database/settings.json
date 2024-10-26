@@ -1,0 +1,8 @@
+{
+    "mode": "anyone",
+    "payment_mode": "fee_per_hour",
+    "recognition_confidence": 20,
+    "detection_interval": 10.0,
+    "recognition_model": "best.pt",
+    "region": 0
+}

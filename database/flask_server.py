@@ -3,6 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from db_create import Cars, AuthorizedCars, Base
 from datetime import datetime
+import settings as st
 
 app = Flask(__name__)
 
@@ -10,9 +11,21 @@ engine = create_engine("sqlite:///CarPark.db", echo=True)
 Session = sessionmaker(bind=engine)
 session = Session()
 
+st.load_settings()
+
 @app.route("/change_settings", methods=["POST"])
 def change_settings():
-    pass
+    new_settings = request.get_json()
+
+    if new_settings is None:
+        return jsonify({"error": "No settings"}), 400
+
+    for setting_name, setting_val in new_settings.items():
+        if setting_val is not None:
+            st.settings[setting_name] = setting_val
+
+    st.save_settings()
+    return jsonify({"message": "Settings updated successfully"}), 200
 
 @app.route("/get_cars", methods=["GET"])
 def get_cars():

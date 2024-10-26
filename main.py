@@ -7,15 +7,25 @@ from communication.stream_video import StreamVideo
 from communication.send_img import SendImg
 from read_license_plate import ReadLicensePlate
 from communication.send_data import SendData
+import database.settings as st
 
-recognition_model = YOLO('models/best.pt')
+#Settings
+st.load_settings()
 
+#Yolo v8 model
+recognition_model = YOLO(f'models/{st.settings["recognition_model"]}')
 last_detection_time = time.time()
 
+#Tesseract engine
 OCR_model = ReadLicensePlate()
 
+#Communication
 sender_img = SendImg(host_ip='0.0.0.0', host_port=9998)
 sender_data = SendData(host_ip='0.0.0.0', host_port=9997)
+
+#Camera
+frame = cam_setup()
+stream = StreamVideo('192.168.1.125', 9999)
 
 def detection_interval():
     current_time = time.time()
@@ -30,7 +40,7 @@ def detection_thread(frame):
             for det in result.boxes.data:
                 x1, y1, x2, y2, conf, cls = det.tolist()
 
-                if conf > 0.2:
+                if conf > st.settings["recognition_confidence"]:
                     plate_img = frame[int(y1):int(y2), int(x1):int(x2)]
                     sender_img.send_frame(plate_img)
                     license_plate = OCR_model.get_string(plate_img)
@@ -38,6 +48,9 @@ def detection_thread(frame):
                         "license_plate": license_plate
                     }
                     sender_data.send_data(data)
+
+def authorization(mode, license_plate):
+    if st.settings[""]
 
 
 def cam_setup():
@@ -49,22 +62,21 @@ def cam_setup():
 
     return cam
 
-frame = cam_setup()
-st = StreamVideo('192.168.1.125', 9999)
 
-while True:
-    img = frame.capture_array()
+if __name__ == '__main__':
+    while True:
+        img = frame.capture_array()
 
-    last_detection_time, interval = detection_interval()
-    if interval == True:
-        detection_thread_instance = threading.Thread(target=detection_thread, args=(img,))
-        detection_thread_instance.start()
+        last_detection_time, interval = detection_interval()
+        if interval == True:
+            detection_thread_instance = threading.Thread(target=detection_thread, args=(img,))
+            detection_thread_instance.start()
 
-    #cv2.imshow("Camera", img)
-    st.stream_frame(img)
+        #cv2.imshow("Camera", img)
+        sttream.stream_frame(img)
 
-    if cv2.waitKey(1) == ord('q'):
-        break
+        if cv2.waitKey(1) == ord('q'):
+            break
 
-cv2.destroyAllWindows()
-st.stop_streaming()
+    cv2.destroyAllWindows()
+    st.stop_streaming()
