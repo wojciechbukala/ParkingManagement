@@ -1,9 +1,11 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from db_create import Cars, AuthorizedCars, Base
 from datetime import datetime
 import settings as st
+import os
+import json
 
 app = Flask(__name__)
 
@@ -12,6 +14,23 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 st.load_settings()
+
+@app.route("/send_detection_img", methods=["GET"])
+def send_detection_img():
+    if not os.path.exists("detected.png"):
+        return jsonify({"error": "File not found"}), 404
+    
+    try:
+        return send_file("detected.png", mimetype='image/png')
+    except Exception as e:
+        return str(e), 500
+
+@app.route("/send_detection_data", methods=["GET"])
+def send_detection_data():
+    with open("detection_data.json", 'r') as f:
+        detected_data = json.load(f)
+        return jsonify(detected_data), 200
+    
 
 @app.route("/change_settings", methods=["POST"])
 def change_settings():

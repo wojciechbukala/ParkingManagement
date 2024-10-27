@@ -3,9 +3,10 @@ import cv2
 from ultralytics import YOLO
 import threading
 import time
+import json
 from communication.stream_video import StreamVideo
 from communication.send_img import SendImg
-from read_license_plate import ReadLicensePlate
+from OCR.read_license_plate import ReadLicensePlate
 from communication.send_data import SendData
 import database.settings as st
 
@@ -23,9 +24,6 @@ OCR_model = ReadLicensePlate()
 sender_img = SendImg(host_ip='0.0.0.0', host_port=9998)
 sender_data = SendData(host_ip='0.0.0.0', host_port=9997)
 
-#Camera
-frame = cam_setup()
-stream = StreamVideo('192.168.1.125', 9999)
 
 def detection_interval():
     current_time = time.time()
@@ -42,15 +40,15 @@ def detection_thread(frame):
 
                 if conf > st.settings["recognition_confidence"]:
                     plate_img = frame[int(y1):int(y2), int(x1):int(x2)]
-                    sender_img.send_frame(plate_img)
+                    cv2.imwrite("database/detected.png", plate_img)
                     license_plate = OCR_model.get_string(plate_img)
                     data = {
-                        "license_plate": license_plate
+                        "license_plate": license_plate,
+                        "confidence": conf
                     }
-                    sender_data.send_data(data)
+                    with open("database/detection_data.json", 'w') as f:
+                        json.dump(data, f, indent=4)
 
-def authorization(mode, license_plate):
-    if st.settings[""]
 
 
 def cam_setup():
@@ -61,6 +59,10 @@ def cam_setup():
     cam.start()
 
     return cam
+
+    #Camera
+frame = cam_setup()
+stream = StreamVideo('192.168.1.125', 9999)
 
 
 if __name__ == '__main__':
@@ -73,7 +75,7 @@ if __name__ == '__main__':
             detection_thread_instance.start()
 
         #cv2.imshow("Camera", img)
-        sttream.stream_frame(img)
+        stream.stream_frame(img)
 
         if cv2.waitKey(1) == ord('q'):
             break
