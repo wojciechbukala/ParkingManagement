@@ -9,6 +9,7 @@ from communication.send_img import SendImg
 from OCR.read_license_plate import ReadLicensePlate
 from communication.send_data import SendData
 import database.settings as st
+from database.db_selects import Selects
 
 #Settings
 st.load_settings()
@@ -23,6 +24,7 @@ OCR_model = ReadLicensePlate()
 #Communication
 sender_img = SendImg(host_ip='0.0.0.0', host_port=9998)
 sender_data = SendData(host_ip='0.0.0.0', host_port=9997)
+selects = Selects()
 
 
 def detection_interval():
@@ -42,12 +44,24 @@ def detection_thread(frame):
                     plate_img = frame[int(y1):int(y2), int(x1):int(x2)]
                     cv2.imwrite("database/detected.png", plate_img)
                     license_plate = OCR_model.get_string(plate_img)
-                    data = {
-                        "license_plate": license_plate,
-                        "confidence": conf
-                    }
-                    with open("database/detection_data.json", 'w') as f:
-                        json.dump(data, f, indent=4)
+
+                    handle_detection_thread = threading.Thread(target=handle_detection, args=(license_plate, conf))
+                    handle_detection_thread .start()
+
+def handle_detection(license_plate, confidence):
+    if st.settings["mode"] == "authorized":
+        acceptance = selects.check_authorization(license_plate)
+    else:
+        acceptance = True
+
+    data = {
+        "license_plate": license_plate,
+        "acceptance": acceptance,
+        "confidence": confidence,
+        "model": st.settings["recognition_model"]
+    }
+    with open("database/detection_data.json", 'w') as f:
+        json.dump(data, f, indent=4)
 
 
 
@@ -60,7 +74,7 @@ def cam_setup():
 
     return cam
 
-    #Camera
+#Camera
 frame = cam_setup()
 stream = StreamVideo('192.168.1.125', 9999)
 
