@@ -62,27 +62,23 @@ def detect_edges(image):
     edges['top_edge'] = top_edge
     edges['bottom_edge'] = bottom_edge
 
-    # # Draw the detected lines on the output image
-    # line_color = (0, 255, 0)  # Green
-    # line_thickness = 2
+    # Draw the detected lines on the output image
+    line_color = (0, 255, 0)  # Green
+    line_thickness = 2
 
-    # for edge in [right_edge, top_edge, bottom_edge]:
-    #     if edge is not None:
-    #         x1, y1, x2, y2 = edge
-    #         cv2.line(output_image, (x1, y1), (x2, y2), line_color, line_thickness)
+    for edge in [right_edge, top_edge, bottom_edge]:
+        if edge is not None:
+            x1, y1, x2, y2 = edge
+            cv2.line(output_image, (x1, y1), (x2, y2), line_color, line_thickness)
 
-    # # Display the images with detected edges
-    # cv2.imshow("Sharpened Image", sharpened_image)
-    # cv2.imshow("Detected Lines", output_image)
-    # cv2.imshow("Canny Edges", canny_img)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    # Display the images with detected edges
+    #cv2.imwrite("edges.png", output_image)
     
     return edges
 
 if __name__ == '__main__':
     # Load the image in grayscale mode
-    image = cv2.imread('license3.png', cv2.IMREAD_GRAYSCALE)
+    image = cv2.imread('merc6_pre.png', cv2.IMREAD_GRAYSCALE)
 
     # Call the function
     print(detect_edges(image))

@@ -15,6 +15,10 @@ session = Session()
 
 st.load_settings()
 
+@app.route("/status", methods=["GET"])
+def status():
+    return jsonify({"status": "Server is running"}), 200
+
 @app.route("/send_detection_img", methods=["GET"])
 def send_detection_img():
     if not os.path.exists("detected.png"):
@@ -96,6 +100,20 @@ def insert_auth_car():
     except Exception as e:
         session.rollback()
         return jsonify({"error": f"Failed to add authorization: {str(e)}"}), 500
+
+@app.route('/delete_car', methods=['POST'])
+def delete_car():
+    data = request.get_json()
+
+    license_plate = data.get("license_plate")
+
+    car_to_remove = session.query(Cars).filter_by(license_plate=license_plate).first()
+    if car_to_remove:
+        session.delete(car_to_remove)
+        session.commit()
+        return jsonify({"message": "Car authorization removed successfully!"}), 201
+
+    return jsonify({"message": "Can not find the car!"}), 201
 
 @app.route('/delete_authorization', methods=['POST'])
 def delete_auth_car():

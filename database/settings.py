@@ -5,15 +5,21 @@
 import json
 import os
 
+detection_data = {}
+
 settings = {}
+
+total_capacity = 0
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 file_path = os.path.join(base_dir, 'settings.json')
 
 def load_settings():
     global settings
+    global total_capacity
     with open(file_path, 'r') as file:
         settings = json.load(file)
+        total_capacity = settings.get("total_capacity", 0)
 
 def save_settings():
     global settings

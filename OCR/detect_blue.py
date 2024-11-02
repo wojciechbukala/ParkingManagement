@@ -4,8 +4,8 @@ import numpy as np
 def detect_blue_areas(image):
     hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     
-    lower_blue = np.array([105, 200, 70])
-    upper_blue = np.array([130, 255, 255]) 
+    lower_blue = np.array([100, 120, 50])
+    upper_blue = np.array([140, 255, 255]) 
     
     blue_mask = cv2.inRange(hsv_image, lower_blue, upper_blue)
 
@@ -24,18 +24,14 @@ def cut_blue_region(image):
         x, y, w, h = cv2.boundingRect(largest_contour)
         image = image[:, w+int(image.shape[1]*0.015):]
         
-        # # Wyświetl wykryty obszar niebieski
-        # cv2.imshow("Detected Blue Area", image)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
+
+        cv2.imwrite("blue_area.png", image)
         
-        return image
-    else:
-        return None
+    return image
 
 if __name__ == '__main__':
     # Wczytaj obraz tablicy rejestracyjnej
-    image = cv2.imread('license2.png')  # Zastąp 'european_license_plate.png' ścieżką do swojego obrazu
+    image = cv2.imread('merc6_pre.png')  # Zastąp 'european_license_plate.png' ścieżką do swojego obrazu
 
     # Wytnij i pokaż niebieski obszar tablicy rejestracyjnej
-    extracted_region = extract_blue_region(image)
+    extracted_region = cut_blue_region(image)

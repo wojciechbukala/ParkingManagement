@@ -9,7 +9,7 @@ def preprocess_img(img):
     img_color = cut_blue_region(img)
     
     if img_color is None:
-        return None
+        img_color = img
     
     gray_img = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY)
 
@@ -38,7 +38,8 @@ def preprocess_img(img):
 
 
 if __name__ == '__main__':
-    image = cv2.imread('license3.png')
+    image = cv2.imread('merc6_pre.png')
+    print(image.shape)
 
-    preprocess(image)
+    preprocess_img(image)
 

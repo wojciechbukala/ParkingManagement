@@ -10,6 +10,8 @@ from OCR.read_license_plate import ReadLicensePlate
 from communication.send_data import SendData
 import database.settings as st
 from database.db_selects import Selects
+from database.db_inserts import Inserts
+
 
 class LicensePlateRecognition:
     def __init__(self):
@@ -19,6 +21,9 @@ class LicensePlateRecognition:
 
         #Camera setup
         self.cam = self.cam_setup()
+
+        #Capacity
+        self.capacity_occupied = 0
 
         #Last detection time
         self.last_detection_time = time.time()
@@ -32,8 +37,10 @@ class LicensePlateRecognition:
         self.OCR_model = ReadLicensePlate()
 
     def init_communication(self):
-        self.stream_video = StreamVideo('192.168.1.125', 9999)
+        self.stream_video = StreamVideo('192.168.8.102', 9999)
         self.selects = Selects()
+        self.inserts = Inserts()
+        self.detection_data = st.detection_data
 
     def cam_setup(self):
         cam = Picamera2()
@@ -43,9 +50,9 @@ class LicensePlateRecognition:
         cam.start()
         return cam
 
-    def detection_interval():
+    def detection_interval(self):
         current_time = time.time()
-        if current_time - self.last_detection_time >= 3:
+        if current_time - self.last_detection_time >= st.settings["detection_interval"]:
             self.last_detection_time = current_time
             return True
         return False
@@ -61,25 +68,34 @@ class LicensePlateRecognition:
                     if conf > st.settings["recognition_confidence"]:
                         plate_img = frame[int(y1):int(y2), int(x1):int(x2)]
                         cv2.imwrite("database/detected.png", plate_img)
-                        license_plate = OCR_model.get_string(plate_img)
+                        license_plate = self.OCR_model.get_string(plate_img)
 
-                        handle_detection_thread = threading.Thread(target=handle_detection, args=(license_plate, conf))
-                        handle_detection_thread .start()
+                        if license_plate is not None:
+                            handle_detection_thread = threading.Thread(target=self.handle_detection, args=(license_plate, conf))
+                            handle_detection_thread .start()
 
     def handle_detection(self, license_plate, confidence):
         if st.settings["mode"] == "authorized":
-            acceptance = selects.check_authorization(license_plate)
+            acceptance = self.selects.check_authorization(license_plate)
+            pass
         else:
             acceptance = True
 
-        data = {
+        if acceptance:
+            if self.capacity_occupied < st.total_capacity:
+                self.capacity_occupied += 1
+            self.inserts.insert_car(license_plate)
+            
+        self.detection_data = {
             "license_plate": license_plate,
             "acceptance": acceptance,
             "confidence": confidence,
-            "model": st.settings["recognition_model"]
+            "model": st.settings["recognition_model"],
+            "capacity_left": self.capacity_occupied
         }
+        
         with open("database/detection_data.json", 'w') as f:
-            json.dump(data, f, indent=4)
+            json.dump(self.detection_data, f, indent=4)
 
     def run(self):
         while True:
@@ -89,7 +105,7 @@ class LicensePlateRecognition:
                 detection_thread_instance = threading.Thread(target=self.detect_license_plate, args=(img,))
                 detection_thread_instance.start()
 
-            stream.stream_frame(img)
+            self.stream_video.stream_frame(img)
 
             if cv2.waitKey(1) == ord('q'):
                 break
@@ -99,4 +115,4 @@ class LicensePlateRecognition:
 
 if __name__ == '__main__':
     system = LicensePlateRecognition()
-    system
+    system.run()
