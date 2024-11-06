@@ -23,8 +23,11 @@ def load_settings():
 
 def save_settings():
     global settings
+    settings["updated_flag"] = True
+    print(settings)
     with open(file_path, 'w') as file:
         json.dump(settings, file, indent=4)
 
 if __name__ == '__main__':
     load_settings()
+    save_settings()

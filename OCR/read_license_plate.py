@@ -27,10 +27,10 @@ class ReadLicensePlate:
 
     def get_string(self, img):
         preprocessed_img = preprocess_img(img)
-        # if preprocessed_img is not None:
-        #     size_ratio = (preprocessed_img.shape[0]*preprocessed_img.shape[1])/(img.shape[0]*img.shape[1])
-        #     if size_ratio > 0.65:
-        #         img = preprocessed_img
+        if preprocessed_img is not None:
+            size_ratio = (preprocessed_img.shape[0]*preprocessed_img.shape[1])/(img.shape[0]*img.shape[1])
+            if size_ratio > 0.65:
+                img = preprocessed_img
         start_time = time.time()
         result = self.reader.readtext(img, detail=0)  # detail=0: tylko tekst
         end_time = time.time()

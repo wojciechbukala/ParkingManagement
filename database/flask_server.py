@@ -1,7 +1,6 @@
 from flask import Flask, jsonify, request, send_file
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
-from db_create import Cars, AuthorizedCars, Base
+from db_create import engine, Cars, AuthorizedCars, Base
 from datetime import datetime
 import settings as st
 import os
@@ -9,7 +8,6 @@ import json
 
 app = Flask(__name__)
 
-engine = create_engine("sqlite:///CarPark.db", echo=True)
 Session = sessionmaker(bind=engine)
 session = Session()
 
@@ -39,9 +37,12 @@ def send_detection_data():
 @app.route("/change_settings", methods=["POST"])
 def change_settings():
     new_settings = request.get_json()
+    client_ip = request.remote_addr
 
     if new_settings is None:
         return jsonify({"error": "No settings"}), 400
+
+    new_settings["client_ip"] = client_ip
 
     for setting_name, setting_val in new_settings.items():
         if setting_val is not None:

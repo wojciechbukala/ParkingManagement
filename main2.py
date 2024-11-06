@@ -13,6 +13,13 @@ from database.db_selects import Selects
 from database.db_inserts import Inserts
 
 
+# pattern = 'ZPL80264'
+# total_recognitions = 0
+# total_detections = 0
+# good_detections = 0
+# good_recognitions = 0
+
+
 class LicensePlateRecognition:
     def __init__(self):
         self.init_settings()
@@ -33,11 +40,11 @@ class LicensePlateRecognition:
         self.settings = st.settings
 
     def init_models(self):
-        self.recognition_model = YOLO(f'models/{st.settings["recognition_model"]}')
+        self.recognition_model = YOLO(f'models/{self.settings["recognition_model"]}')
         self.OCR_model = ReadLicensePlate()
 
     def init_communication(self):
-        self.stream_video = StreamVideo('192.168.8.102', 9999)
+        self.stream_video = StreamVideo(st.settings["client_ip"], 9999)
         self.selects = Selects()
         self.inserts = Inserts()
         self.detection_data = st.detection_data
@@ -50,9 +57,19 @@ class LicensePlateRecognition:
         cam.start()
         return cam
 
+    def settings_update(self):
+        with open('database/settings.json', 'r') as f:
+            settings = json.load(f)
+            if settings.get("updated_flag"):
+                self.init_settings()
+                settings["updated_flag"] = False
+                with open('database/settings.json', 'w') as file:
+                    json.dump(settings, file, indent=4)
+                self.stream_video = StreamVideo(st.settings["client_ip"], 9999)
+
     def detection_interval(self):
         current_time = time.time()
-        if current_time - self.last_detection_time >= st.settings["detection_interval"]:
+        if current_time - self.last_detection_time >= self.settings["detection_interval"]:
             self.last_detection_time = current_time
             return True
         return False
@@ -65,7 +82,7 @@ class LicensePlateRecognition:
                 for det in results.boxes.data:
                     x1, y1, x2, y2, conf, cls = det.tolist()
 
-                    if conf > st.settings["recognition_confidence"]:
+                    if conf > self.settings["recognition_confidence"]:
                         plate_img = frame[int(y1):int(y2), int(x1):int(x2)]
                         cv2.imwrite("database/detected.png", plate_img)
                         license_plate = self.OCR_model.get_string(plate_img)
@@ -74,24 +91,48 @@ class LicensePlateRecognition:
                             handle_detection_thread = threading.Thread(target=self.handle_detection, args=(license_plate, conf))
                             handle_detection_thread .start()
 
+                            #test
+                            # global total_recognitions
+                            # global good_detections
+                            # total_recognitions += 1
+                            # good_detections += 1
+
     def handle_detection(self, license_plate, confidence):
-        if st.settings["mode"] == "authorized":
+        acceptance = True
+        car_already_exists_error = False
+        capacity_full_error = False
+
+        #test
+        # global good_recognitions
+        # global pattern
+        # if license_plate == pattern:
+        #     good_recognitions += 1
+
+        if self.settings["mode"] == "authorized":
             acceptance = self.selects.check_authorization(license_plate)
             pass
-        else:
-            acceptance = True
 
         if acceptance:
-            if self.capacity_occupied < st.total_capacity:
+            if self.capacity_occupied >= self.setting["total_capacity"]:
+                acceptance = False
+                capacity_full_error = True
+
+            elif self.selects.check_car_exist(license_plate):
+                acceptance = False
+                car_already_exists_error = True
+
+            else: 
+                self.inserts.insert_car(license_plate)
                 self.capacity_occupied += 1
-            self.inserts.insert_car(license_plate)
             
         self.detection_data = {
             "license_plate": license_plate,
             "acceptance": acceptance,
             "confidence": confidence,
-            "model": st.settings["recognition_model"],
-            "capacity_left": self.capacity_occupied
+            "model": self.settings["recognition_model"],
+            "capacity_occupied": self.capacity_occupied,
+            "already_exists": car_already_exists_error,
+            "capacity_full": capacity_full_error
         }
         
         with open("database/detection_data.json", 'w') as f:
@@ -99,11 +140,23 @@ class LicensePlateRecognition:
 
     def run(self):
         while True:
+            self.settings_update()
+
             img = self.cam.capture_array()
 
             if self.detection_interval():
                 detection_thread_instance = threading.Thread(target=self.detect_license_plate, args=(img,))
                 detection_thread_instance.start()
+
+                #test
+                # global total_recognitions
+                # global total_detections
+                # global good_recognitions
+                # global good_detections
+
+                # total_detections += 1
+
+                # print(f"TR: {total_recognitions}, TD: {total_detections}, GR: {good_recognitions}, GD: {good_detections} ")
 
             self.stream_video.stream_frame(img)
 

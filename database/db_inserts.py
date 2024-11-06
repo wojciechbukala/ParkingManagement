@@ -1,11 +1,11 @@
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from database.db_create import AuthorizedCars, Cars
+from database.db_create import engine, AuthorizedCars, Cars
+#from db_create import AuthorizedCars, Cars
 from datetime import datetime
+
 
 class Inserts():
     def __init__(self):
-        engine = create_engine("sqlite:///CarPark.db", echo=True)
         Session = sessionmaker(bind=engine)
         self.session = Session()
 
@@ -15,6 +15,7 @@ class Inserts():
     def insert_car(self, license_plate):
         car = Cars(license_plate)
         self.session.add(car)
+        print("Auto dodane!")
         self.session.commit()
 
     def car_exit(self, lp):

@@ -1,8 +1,11 @@
+import os
 from sqlalchemy import create_engine, ForeignKey, Column, String, Integer, DateTime, Float, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
+db_path = os.path.join(os.path.dirname(__file__), "CarPark.db")
+engine = create_engine(f"sqlite:///{db_path}", echo=True)
 Base = declarative_base()
 
 class AuthorizedCars(Base):
@@ -56,7 +59,6 @@ class Payments(Base):
         return f"({self.paymentID}, {self.carID}, {self.amount}, {self.payment_date})"
 
 
-engine = create_engine("sqlite:///CarPark.db", echo=True)
 Base.metadata.create_all(bind=engine)
 
 Session = sessionmaker(bind=engine)
