@@ -32,6 +32,12 @@ def send_detection_data():
     with open("detection_data.json", 'r') as f:
         detected_data = json.load(f)
         return jsonify(detected_data), 200
+
+@app.route("/send_global_vars", methods=["GET"])
+def send_global_vars():
+    with open("global_data.json", 'r') as f:
+        global_vars = json.load(f)
+        return jsonify(global_vars), 200
     
 
 @app.route("/change_settings", methods=["POST"])

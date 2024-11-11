@@ -29,9 +29,6 @@ class LicensePlateRecognition:
         #Camera setup
         self.cam = self.cam_setup()
 
-        #Capacity
-        self.capacity_occupied = 0
-
         #Last detection time
         self.last_detection_time = time.time()
 
@@ -110,7 +107,6 @@ class LicensePlateRecognition:
 
         if self.settings["mode"] == "authorized":
             acceptance = self.selects.check_authorization(license_plate)
-            pass
 
         if acceptance:
             if self.selects.check_car_exist(license_plate):
@@ -126,14 +122,22 @@ class LicensePlateRecognition:
 
             else: 
                 self.inserts.insert_car(license_plate)
-                self.capacity_occupied += 1
+
+                with open("database/global_data.json", 'r') as f:
+                    data = json.load(f)
+                data["currently_parked"] += 1
+                data["cars_today"] += 1
+                print(data)
+                with open("database/global_data.json", 'w') as f:
+                    json.dump(data, f)
+                  
             
         self.detection_data = {
             "license_plate": license_plate,
             "acceptance": acceptance,
             "confidence": confidence,
             "model": self.settings["recognition_model"],
-            "capacity_occupied": self.capacity_occupied,
+            "capacity_occupied": data["currently_parked"],
             "already_exists": car_already_exists_error,
             "capacity_full": capacity_full_error
         }

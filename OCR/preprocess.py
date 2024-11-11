@@ -8,7 +8,7 @@ from OCR.detect_edges import detect_edges, sharpen_image
 def preprocess_img(img):
     img_color = cut_blue_region(img)
     
-    if img_color is None:
+    if img_color is None or img_color.shape[1] < 0.85*img.shape[1]:
         img_color = img
     
     gray_img = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY)
