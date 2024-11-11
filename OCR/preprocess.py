@@ -1,9 +1,9 @@
 import cv2
 import numpy as np
 # from detect_blue import cut_blue_region
-# from detect_edges import detect_edges
+# from detect_edges import detect_edges, sharpen_image
 from OCR.detect_blue import cut_blue_region
-from OCR.detect_edges import detect_edges
+from OCR.detect_edges import detect_edges, sharpen_image
 
 def preprocess_img(img):
     img_color = cut_blue_region(img)
@@ -32,13 +32,15 @@ def preprocess_img(img):
         max_y = max(bottom_edge[1], bottom_edge[3])
         img_color = img_color[:max_y, :]
 
-
     cv2.imwrite('preprocessed.png', img_color)
-    return img_color
+    img = sharpen_image(img_color)
+    #img = img_color
+
+    return img
 
 
 if __name__ == '__main__':
-    image = cv2.imread('merc6_pre.png')
+    image = cv2.imread('merc4_pre.png')
     print(image.shape)
 
     preprocess_img(image)

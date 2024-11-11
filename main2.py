@@ -113,13 +113,16 @@ class LicensePlateRecognition:
             pass
 
         if acceptance:
-            if self.capacity_occupied >= self.setting["total_capacity"]:
-                acceptance = False
-                capacity_full_error = True
-
-            elif self.selects.check_car_exist(license_plate):
+            if self.selects.check_car_exist(license_plate):
                 acceptance = False
                 car_already_exists_error = True
+            # if self.capacity_occupied >= self.setting["total_capacity"]:
+            #     acceptance = False
+            #     capacity_full_error = True
+
+            # elif self.selects.check_car_exist(license_plate):
+            #     acceptance = False
+            #     car_already_exists_error = True
 
             else: 
                 self.inserts.insert_car(license_plate)

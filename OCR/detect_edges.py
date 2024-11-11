@@ -13,13 +13,14 @@ def detect_edges(image):
     edges = {'right_edge': None, 'top_edge': None, 'bottom_edge': None}
     canny_img = cv2.Canny(sharpened_image, 20, 100)
 
-    ver_line_len = int(0.15 * image.shape[0])
-    ver_thresh = int(0.1 * image.shape[0])
-    ver_gap = int(0.3 * image.shape[0])
+    hor_line_len = int(0.45 * image.shape[1])
+    hor_thresh = int(0.08 * image.shape[1])
+    hor_gap = int(0.2 * image.shape[1])
 
-    hor_line_len = int(0.15 * image.shape[1])
-    hor_thresh = int(0.1 * image.shape[1])
-    hor_gap = int(0.3 * image.shape[1])
+    ver_line_len = int(0.25 * image.shape[0])
+    ver_thresh = int(0.06 * image.shape[0])
+    ver_gap = int(0.25 * image.shape[0])
+
 
     ver_lines = cv2.HoughLinesP(canny_img, 1, np.pi / 180, threshold=ver_thresh, minLineLength=ver_line_len, maxLineGap=ver_gap)
     hor_lines = cv2.HoughLinesP(canny_img, 1, np.pi / 180, threshold=hor_thresh, minLineLength=hor_line_len, maxLineGap=hor_gap)
@@ -29,8 +30,8 @@ def detect_edges(image):
     bottom_edge_lines = []
 
     right_edge_range = (int(0.95 * image.shape[1]), int(0.98 * image.shape[1]))
-    top_edge_range = (int(0.02 * image.shape[0]), int(0.10 * image.shape[0]))
-    bottom_edge_range = (int(0.90 * image.shape[0]), int(0.98 * image.shape[0]))
+    top_edge_range = (int(0.04 * image.shape[0]), int(0.2 * image.shape[0]))
+    bottom_edge_range = (int(0.85 * image.shape[0]), int(0.97 * image.shape[0]))
 
     output_image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
@@ -78,7 +79,8 @@ def detect_edges(image):
 
 if __name__ == '__main__':
     # Load the image in grayscale mode
-    image = cv2.imread('merc6_pre.png', cv2.IMREAD_GRAYSCALE)
+    image = cv2.imread('merc4_pre.png', cv2.IMREAD_GRAYSCALE)
 
     # Call the function
-    print(detect_edges(image))
+    detected_edges = detect_edges(image)
+    print(detected_edges)
