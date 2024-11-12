@@ -5,6 +5,7 @@ from datetime import datetime
 import settings as st
 import os
 import json
+import pickle
 
 app = Flask(__name__)
 
@@ -56,6 +57,18 @@ def change_settings():
 
     st.save_settings()
     return jsonify({"message": "Settings updated successfully"}), 200
+
+@app.route("/load_gpio", methods=["POST"])
+def load_gpio():
+    gpio = request.get_json()
+
+    if gpio is None:
+        return jsonify({"error": "No gpio"}), 400
+
+    with open("gpio_data.pickle", "wb") as f:
+        pickle.dump(gpio, f)
+
+    return jsonify({"message": "GPIO data saved successfully"}), 200
 
 @app.route("/get_cars", methods=["GET"])
 def get_cars():
