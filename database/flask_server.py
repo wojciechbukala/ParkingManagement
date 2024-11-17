@@ -39,6 +39,7 @@ def send_global_vars():
     with open("global_data.json", 'r') as f:
         global_vars = json.load(f)
         return jsonify(global_vars), 200
+
     
 
 @app.route("/change_settings", methods=["POST"])

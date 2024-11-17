@@ -11,6 +11,7 @@ from communication.send_data import SendData
 import database.settings as st
 from database.db_selects import Selects
 from database.db_inserts import Inserts
+import gpio
 
 
 # pattern = 'ZPL80264'
@@ -18,6 +19,8 @@ from database.db_inserts import Inserts
 # total_detections = 0
 # good_detections = 0
 # good_recognitions = 0
+
+gate_open = False
 
 
 class LicensePlateRecognition:
@@ -32,6 +35,8 @@ class LicensePlateRecognition:
         #Last detection time
         self.last_detection_time = time.time()
 
+        self.init_gpio()
+
     def init_settings(self):
         st.load_settings()
         self.settings = st.settings
@@ -45,6 +50,16 @@ class LicensePlateRecognition:
         self.selects = Selects()
         self.inserts = Inserts()
         self.detection_data = st.detection_data
+
+    def init_gpio(self):
+        self.gpio_handler = gpio.GPIO_Handler()
+        with open("database/global_data.json", 'r') as f:
+            global_vars = json.load(f)
+
+        global_vars["gate_state"] = gpio.gate_open
+
+        with open("database/global_data.json", 'w') as f:
+            json.dump(global_vars, f, indent=4)
 
     def cam_setup(self):
         cam = Picamera2()
@@ -98,6 +113,7 @@ class LicensePlateRecognition:
         acceptance = True
         car_already_exists_error = False
         capacity_full_error = False
+        data = {}
 
         #test
         # global good_recognitions
@@ -112,38 +128,38 @@ class LicensePlateRecognition:
             if self.selects.check_car_exist(license_plate):
                 acceptance = False
                 car_already_exists_error = True
-            # if self.capacity_occupied >= self.setting["total_capacity"]:
-            #     acceptance = False
-            #     capacity_full_error = True
 
-            # elif self.selects.check_car_exist(license_plate):
-            #     acceptance = False
-            #     car_already_exists_error = True
-
-            else: 
-                self.inserts.insert_car(license_plate)
-
+            else:   
                 with open("database/global_data.json", 'r') as f:
                     data = json.load(f)
-                data["currently_parked"] += 1
-                data["cars_today"] += 1
-                print(data)
-                with open("database/global_data.json", 'w') as f:
-                    json.dump(data, f)
+
+                if data["currently_parked"] >= self.settings["total_capacity"]:
+                    acceptance = False
+                    capacity_full_error = True
+
+                else:
+                    self.inserts.insert_car(license_plate)
+                    data["currently_parked"] = selects.count_cars()
+                    data["cars_today"] += 1
+                    #print(data)
+                    with open("database/global_data.json", 'w') as f:
+                        json.dump(data, f)
                   
-            
         self.detection_data = {
             "license_plate": license_plate,
             "acceptance": acceptance,
             "confidence": confidence,
             "model": self.settings["recognition_model"],
-            "capacity_occupied": data["currently_parked"],
+            "capacity_occupied": data.get("currently_parked", 0),
             "already_exists": car_already_exists_error,
             "capacity_full": capacity_full_error
         }
-        
+
         with open("database/detection_data.json", 'w') as f:
             json.dump(self.detection_data, f, indent=4)
+
+        if acceptance == True:
+            self.gpio_handler.handle_gpio_recognition()
 
     def run(self):
         while True:
@@ -151,7 +167,7 @@ class LicensePlateRecognition:
 
             img = self.cam.capture_array()
 
-            if self.detection_interval():
+            if self.detection_interval() and not gpio.gate_open:
                 detection_thread_instance = threading.Thread(target=self.detect_license_plate, args=(img,))
                 detection_thread_instance.start()
 
@@ -165,6 +181,7 @@ class LicensePlateRecognition:
 
                 # print(f"TR: {total_recognitions}, TD: {total_detections}, GR: {good_recognitions}, GD: {good_detections} ")
 
+            #cv2.imshow("Camera", img)
             self.stream_video.stream_frame(img)
 
             if cv2.waitKey(1) == ord('q'):

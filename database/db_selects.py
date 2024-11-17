@@ -24,6 +24,10 @@ class Selects():
         else:
             return False
 
+    def count_cars(self):
+        car_count = self.session.query(Cars).count()
+        return car_count
+
 if __name__ == "__main__":
     selects = Selects()
     print(selects.check_authorization('EE12345'))
