@@ -11,7 +11,7 @@ class Selects():
         self.session.close()
 
     def check_car_exist(self, license_plate):
-        car_exists = self.session.query(Cars).filter_by(license_plate=license_plate).first()
+        car_exists = self.session.query(Cars).filter_by(license_plate=license_plate, currently_parked=True).first()
         if car_exists:
             return True
         else:
@@ -27,6 +27,10 @@ class Selects():
     def count_cars(self):
         car_count = self.session.query(Cars).count()
         return car_count
+
+    def currently_parked_cars(self):
+        parked_cars_count = self.session.query(Cars).filter_by(currently_parked=True).count()
+        return parked_cars_count
 
 if __name__ == "__main__":
     selects = Selects()

@@ -9,10 +9,12 @@ class GPIO_Handler:
     def __init__(self):
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
-        self.output_pins = [2, 3, 4]
-        self.input_pins = [21, 20, 6]
+        self.output_pins = [21, 20, 16]
+        self.input_pins = [1, 7, 8]
         for pin in self.output_pins:
             GPIO.setup(pin, GPIO.OUT)
+        for pin in self.input_pins:
+            GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
     def read_gpio(self):
         try:

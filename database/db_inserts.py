@@ -14,6 +14,7 @@ class Inserts():
 
     def insert_car(self, license_plate):
         car = Cars(license_plate)
+        car.currently_parked = True
         self.session.add(car)
         print("Auto dodane!")
         self.session.commit()

@@ -33,11 +33,9 @@ class Cars(Base):
     exit_time = Column("exit_time", DateTime)
     currently_parked = Column("currently_parked", Boolean)
 
-    def __init__(self, license_plate, entry_time = None, exit_time = None, currently_parked = True):
+    def __init__(self, license_plate, entry_time = None):
         self.license_plate = license_plate
         self.entry_time = entry_time if entry_time else datetime.now()
-        self.exit_time = exit_time
-        self.currently_parked = currently_parked
 
     def __repr__(self):
         return f"({self.carID}, {self.license_plate}, {self.entry_time}, {self.exit_time}, {self.currently_parked})"
@@ -57,6 +55,7 @@ class Payments(Base):
 
     def __repr__(self):
         return f"({self.paymentID}, {self.carID}, {self.amount}, {self.payment_date})"
+
 
 
 Base.metadata.create_all(bind=engine)

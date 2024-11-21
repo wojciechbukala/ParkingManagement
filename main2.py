@@ -130,20 +130,13 @@ class LicensePlateRecognition:
                 car_already_exists_error = True
 
             else:   
-                with open("database/global_data.json", 'r') as f:
-                    data = json.load(f)
 
-                if data["currently_parked"] >= self.settings["total_capacity"]:
+                if self.selects.currently_parked_cars() >= self.settings["total_capacity"]:
                     acceptance = False
                     capacity_full_error = True
 
                 else:
                     self.inserts.insert_car(license_plate)
-                    data["currently_parked"] = selects.count_cars()
-                    data["cars_today"] += 1
-                    #print(data)
-                    with open("database/global_data.json", 'w') as f:
-                        json.dump(data, f)
                   
         self.detection_data = {
             "license_plate": license_plate,
@@ -166,6 +159,8 @@ class LicensePlateRecognition:
             self.settings_update()
 
             img = self.cam.capture_array()
+
+            self.gpio_handler.handle_gpio_inputs()
 
             if self.detection_interval() and not gpio.gate_open:
                 detection_thread_instance = threading.Thread(target=self.detect_license_plate, args=(img,))

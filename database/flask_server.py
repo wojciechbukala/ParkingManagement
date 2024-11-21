@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request, send_file
+from sqlalchemy import func
 from sqlalchemy.orm import sessionmaker
-from db_create import engine, Cars, AuthorizedCars, Base
+from db_create import engine, Cars, AuthorizedCars, Payments, Base
 from datetime import datetime
 import settings as st
 import os
@@ -73,7 +74,7 @@ def load_gpio():
 
 @app.route("/get_cars", methods=["GET"])
 def get_cars():
-    cars = session.query(Cars).all()
+    cars = session.query(Cars).filter(Cars.currently_parked == True).all()
     cars_list = [
         {
             'carID': car.carID,
@@ -84,6 +85,31 @@ def get_cars():
         }
         for car in cars
     ]
+    return jsonify(cars_list)
+
+@app.route("/get_history", methods=["GET"])
+def get_history():
+    cars = session.query(Cars).filter(Cars.currently_parked == False).all()
+    cars_list = []
+    
+    for car in cars:
+        car_info = {
+            'carID': car.carID,
+            'license_plate': car.license_plate,
+            'entry_time': car.entry_time,
+            'exit_time': car.exit_time,
+            'currently_parked': car.currently_parked
+        }
+        
+        payment = session.query(Payments).filter_by(carID=car.carID).first()
+        
+        if payment:
+            car_info['payment'] = {
+                'amount': payment.amount
+            }
+        
+        cars_list.append(car_info)
+    
     return jsonify(cars_list)
 
 @app.route("/get_authorized_cars", methods=["GET"])
@@ -126,15 +152,51 @@ def insert_auth_car():
 def delete_car():
     data = request.get_json()
 
-    license_plate = data.get("license_plate")
+    carID = data.get("car_id")
 
-    car_to_remove = session.query(Cars).filter_by(license_plate=license_plate).first()
+    car_to_remove = session.query(Cars).filter_by(carID=carID).first()
     if car_to_remove:
-        session.delete(car_to_remove)
+        parking_duration = datetime.now() - car_to_remove.entry_time
+        hours_parked = parking_duration.total_seconds() // 3600
+        int(st.settings["fee_per_hour"])
+
+        if st.settings["payment_mode"] == "fee_per_hour":
+            total_amount = int(st.settings["fee_per_hour"]) * (hours_parked+1)
+        elif st.settings["payment_mode"] == "entrance_fee":
+            total_amount = int(st.settings["fee_per_hour"])
+        else:
+            total_amount = 0
+
+        new_payment = Payments(
+            carID=carID,
+            amount=total_amount,
+            payment_date=datetime.now()
+        )
+
+        car_to_remove.currently_parked = False
+        car_to_remove.exit_time = datetime.now()
+        session.add(new_payment)
         session.commit()
         return jsonify({"message": "Car authorization removed successfully!"}), 201
 
     return jsonify({"message": "Can not find the car!"}), 201
+
+@app.route('/remove_history', methods=['POST'])
+def remove_history():
+   data = request.get_json()
+   carID = data.get("car_id")
+
+   payment_to_remove = session.query(Payments).filter_by(carID=carID).first()
+   if payment_to_remove:
+       session.delete(payment_to_remove)
+   
+   car_to_remove = session.query(Cars).filter_by(carID=carID).first()
+   if car_to_remove:
+       session.delete(car_to_remove)
+       session.commit()
+       return jsonify({"message": "Car authorization removed successfully!"}), 201
+   
+   return jsonify({"message": "Can not find the car!"}), 201
 
 @app.route('/delete_authorization', methods=['POST'])
 def delete_auth_car():
@@ -149,6 +211,16 @@ def delete_auth_car():
         return jsonify({"message": "Car authorization removed successfully!"}), 201
 
     return jsonify({"message": "Can not find the car!"}), 201
+
+@app.route('/get_cars_today', methods=['GET'])
+def get_cars_today():
+    today = datetime.now().date()
+    cars_today_count = session.query(Cars).filter(
+        func.date(Cars.entry_time) == today,
+        Cars.currently_parked == True
+    ).count()
+    
+    return jsonify({"cars_today": cars_today_count})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
