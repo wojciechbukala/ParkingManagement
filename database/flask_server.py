@@ -215,10 +215,7 @@ def delete_auth_car():
 @app.route('/get_cars_today', methods=['GET'])
 def get_cars_today():
     today = datetime.now().date()
-    cars_today_count = session.query(Cars).filter(
-        func.date(Cars.entry_time) == today,
-        Cars.currently_parked == True
-    ).count()
+    cars_today_count = session.query(Cars).filter(func.date(Cars.entry_time) == today).count()
     
     return jsonify({"cars_today": cars_today_count})
 

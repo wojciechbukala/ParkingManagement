@@ -14,11 +14,11 @@ from database.db_inserts import Inserts
 import gpio
 
 
-# pattern = 'ZPL80264'
-# total_recognitions = 0
-# total_detections = 0
-# good_detections = 0
-# good_recognitions = 0
+pattern = 'ZPL80264'
+total_recognitions = 0
+total_detections = 0
+good_detections = 0
+good_recognitions = 0
 
 gate_open = False
 
@@ -104,10 +104,10 @@ class LicensePlateRecognition:
                             handle_detection_thread .start()
 
                             #test
-                            # global total_recognitions
-                            # global good_detections
-                            # total_recognitions += 1
-                            # good_detections += 1
+                            global total_recognitions
+                            global good_detections
+                            total_recognitions += 1
+                            good_detections += 1
 
     def handle_detection(self, license_plate, confidence):
         acceptance = True
@@ -116,10 +116,10 @@ class LicensePlateRecognition:
         data = {}
 
         #test
-        # global good_recognitions
-        # global pattern
-        # if license_plate == pattern:
-        #     good_recognitions += 1
+        global good_recognitions
+        global pattern
+        if license_plate == pattern:
+            good_recognitions += 1
 
         if self.settings["mode"] == "authorized":
             acceptance = self.selects.check_authorization(license_plate)
@@ -167,14 +167,14 @@ class LicensePlateRecognition:
                 detection_thread_instance.start()
 
                 #test
-                # global total_recognitions
-                # global total_detections
-                # global good_recognitions
-                # global good_detections
+                global total_recognitions
+                global total_detections
+                global good_recognitions
+                global good_detections
 
-                # total_detections += 1
+                total_detections += 1
 
-                # print(f"TR: {total_recognitions}, TD: {total_detections}, GR: {good_recognitions}, GD: {good_detections} ")
+                print(f"TR: {total_recognitions}, TD: {total_detections}, GR: {good_recognitions}, GD: {good_detections} ")
 
             #cv2.imshow("Camera", img)
             self.stream_video.stream_frame(img)
